@@ -1,0 +1,15 @@
+RESULTS — Readers–Writers Synchronization Simulator
+
+Automated test output supplied by the user:
+
+PASS Readers only (readers=4 writers=0 expected_final=0)
+PASS Writers only (readers=0 writers=3 expected_final=3)
+PASS Mixed access (readers=3 writers=2 expected_final=2)
+PASS More readers (readers=8 writers=2 expected_final=2)
+PASS More writers (readers=2 writers=8 expected_final=8)
+PASS Maximum supported threads (readers=32 writers=32 expected_final=32)
+0 failed checks
+
+All six test cases passed. In each case, the final shared-data value matched the number of writers, and all threads completed. These tests check completion and update consistency for the listed workloads; they do not measure fairness or rule out writer starvation under an endless stream of readers.
+
+The order of reader and writer messages in a normal demo run can vary because thread scheduling is nondeterministic.
