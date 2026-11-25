@@ -169,7 +169,7 @@ static int run_tests(void) {
         {"Mixed access", 3, 2},
         {"More readers", 8, 2},
         {"More writers", 2, 8},
-        {"Maximum supported threads", 32, 32}
+        {"64-thread stress workload", 32, 32}
     };
     int failures = 0;
     int case_count = (int)(sizeof(cases) / sizeof(cases[0]));
