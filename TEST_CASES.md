@@ -48,11 +48,11 @@ Checks a writer-heavy workload. Expected final data: **8**.
 
 Replay: `./readers_writers 2 8`
 
-## 6. Maximum supported threads
+## 6. 64-thread stress workload
 
 Readers **32** · Writers **32**
 
-Checks the configured limit of 64 total threads and that all 32 increments are retained. Expected final data: **32**.
+Checks a mixed workload of 32 readers and 32 writers (64 threads total) and verifies that all 32 writer increments are retained. This is a stress case; the program allows up to 64 readers and 64 writers separately. **32**.
 
 Replay: `./readers_writers 32 32`
 
