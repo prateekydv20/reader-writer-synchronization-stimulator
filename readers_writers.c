@@ -22,10 +22,17 @@ static pthread_mutex_t reader_mutex;
 static pthread_mutex_t output_mutex;
 static sem_t resource;
 static int quiet_mode = 0;
+static double total_writer_wait_ms = 0.0;
+static int writer_wait_samples = 0;
 
 static void short_pause(void) {
     struct timespec delay = {0, 2000000};
     nanosleep(&delay, NULL);
+}
+
+static double elapsed_ms(struct timespec start, struct timespec end) {
+    return (end.tv_sec - start.tv_sec) * 1000.0 +
+           (end.tv_nsec - start.tv_nsec) / 1000000.0;
 }
 
 static void *reader(void *opaque) {
@@ -54,9 +61,16 @@ static void *reader(void *opaque) {
 
 static void *writer(void *opaque) {
     ThreadArg *arg = (ThreadArg *)opaque;
+    struct timespec wait_start, wait_end;
+
+    clock_gettime(CLOCK_MONOTONIC, &wait_start);
     sem_wait(&resource);
+    clock_gettime(CLOCK_MONOTONIC, &wait_end);
+    double wait_ms = elapsed_ms(wait_start, wait_end);
 
     pthread_mutex_lock(&output_mutex);
+    total_writer_wait_ms += wait_ms;
+    writer_wait_samples++;
     shared_data++;
     completed_writers++;
     if (!quiet_mode)
@@ -76,11 +90,15 @@ static int run_case(int readers, int writers, int show_output) {
     int created_readers = 0;
     int created_writers = 0;
     int failed = 0;
+    struct timespec run_start, run_end;
+    double run_ms = 0.0;
 
     reader_count = 0;
     shared_data = 0;
     completed_readers = 0;
     completed_writers = 0;
+    total_writer_wait_ms = 0.0;
+    writer_wait_samples = 0;
     quiet_mode = !show_output;
     pthread_mutex_init(&reader_mutex, NULL);
     pthread_mutex_init(&output_mutex, NULL);
@@ -90,6 +108,8 @@ static int run_case(int readers, int writers, int show_output) {
         pthread_mutex_destroy(&output_mutex);
         return 0;
     }
+
+    clock_gettime(CLOCK_MONOTONIC, &run_start);
 
     /* Interleave creation so readers and writers contend for the resource. */
     for (int i = 0; i < readers || i < writers; i++) {
@@ -118,14 +138,23 @@ static int run_case(int readers, int writers, int show_output) {
     for (int i = 0; i < created_writers; i++)
         pthread_join(writer_threads[i], NULL);
 
+    clock_gettime(CLOCK_MONOTONIC, &run_end);
+    run_ms = elapsed_ms(run_start, run_end);
+
     if (failed || created_readers != readers || created_writers != writers ||
         completed_readers != readers || completed_writers != writers ||
         shared_data != writers || reader_count != 0)
         failed = 1;
 
-    if (show_output)
-        printf("Summary: readers=%d writers=%d final_data=%d\n",
-               completed_readers, completed_writers, shared_data);
+    if (show_output) {
+        double average_writer_wait_ms = writer_wait_samples > 0
+            ? total_writer_wait_ms / writer_wait_samples
+            : 0.0;
+        printf("Summary: readers=%d writers=%d final_data=%d "
+               "average_writer_wait_ms=%.3f total_runtime_ms=%.3f\n",
+               completed_readers, completed_writers, shared_data,
+               average_writer_wait_ms, run_ms);
+    }
 
     sem_destroy(&resource);
     pthread_mutex_destroy(&reader_mutex);
@@ -147,9 +176,9 @@ static int run_tests(void) {
 
     for (int i = 0; i < case_count; i++) {
         int pass = run_case(cases[i].readers, cases[i].writers, 0);
-        printf("%s %s (readers=%d writers=%d expected_final=%d)\n",
+        printf("%s %s (readers=%d writers=%d expected_final=%d observed_final=%d)\n",
                pass ? "PASS" : "FAIL", cases[i].name,
-               cases[i].readers, cases[i].writers, cases[i].writers);
+               cases[i].readers, cases[i].writers, cases[i].writers, shared_data);
         if (!pass)
             failures++;
     }
@@ -192,4 +221,5 @@ int main(int argc, char **argv) {
     }
     return 0;
 }
+
 
