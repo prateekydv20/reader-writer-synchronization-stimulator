@@ -13,3 +13,34 @@ PASS Maximum supported threads (readers=32 writers=32 expected_final=32)
 All six test cases passed. In each case, the final shared-data value matched the number of writers, and all threads completed. These tests check completion and update consistency for the listed workloads; they do not measure fairness or rule out writer starvation under an endless stream of readers.
 
 The order of reader and writer messages in a normal demo run can vary because thread scheduling is nondeterministic.
+
+
+ONLINEGDB TIMING RUNS
+Descriptive measurements from supplied screenshots; scheduling and hosted-environment conditions can affect timings.
+
+Workload: Reader-heavy (8 readers, 2 writers)
+Run 1: writer_wait_ms=3.396, total_runtime_ms=6.699, final_data=2
+Run 2: writer_wait_ms=3.642, total_runtime_ms=7.018, final_data=2
+Run 3: writer_wait_ms=3.337, total_runtime_ms=6.824, final_data=2
+Run 4: writer_wait_ms=3.417, total_runtime_ms=6.792, final_data=2
+Run 5: writer_wait_ms=3.794, total_runtime_ms=7.147, final_data=2
+Mean writer wait: 3.517 ms (n=5)
+Mean runtime: 6.896 ms (n=5)
+
+Workload: Balanced (5 readers, 5 writers)
+Run 1: writer_wait_ms=6.380, total_runtime_ms=12.882, final_data=5
+Run 2: writer_wait_ms=6.635, total_runtime_ms=13.272, final_data=5
+Run 3: writer_wait_ms=7.381, total_runtime_ms=14.186, final_data=5
+Run 4: writer_wait_ms=6.372, total_runtime_ms=12.920, final_data=5
+Run 5: writer_wait_ms=6.448, total_runtime_ms=13.077, final_data=5
+Mean writer wait: 6.643 ms (n=5)
+Mean runtime: 13.267 ms (n=5)
+
+Workload: Writer-heavy (2 readers, 8 writers)
+Run 1: writer_wait_ms=9.221, total_runtime_ms=19.083, final_data=8
+Run 2: writer_wait_ms=9.334, total_runtime_ms=19.041, final_data=8
+Run 3: writer_wait_ms=9.320, total_runtime_ms=19.058, final_data=8
+Run 4: writer_wait_ms=9.471, total_runtime_ms=19.159, final_data=8
+Run 5: writer_wait_ms=9.436, total_runtime_ms=CLIPPED, final_data=8
+Mean writer wait: 9.356 ms (n=5)
+Mean runtime: 19.085 ms (n=4; Run 5 excluded because its runtime was clipped)
